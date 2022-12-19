@@ -7,7 +7,9 @@ from scraper import QuestionScraper
 
 class Quiz:
     def __init__(self, quiz_dir=None) -> None:
-        self.scraper = QuestionScraper(self._get_html_files(quiz_dir))
+        self.scraper = QuestionScraper(quiz_dir, self._get_html_files(quiz_dir))
+        self.title = self.scraper._getExamTitle()
+        self.questions = self._extract_questions()
 
     def _get_html_files(self, quiz_dir: str):
         html = []
@@ -22,7 +24,7 @@ class Quiz:
         questions = []
         for question in all_questions_raw:
             question_number = self.scraper.get_question_number(question)
-            body = self.scraper.get_question_body(question)
+            text, introduction, img = self.scraper.get_question_body(question)
             answers = self.scraper.get_answers(question)
             correct_community_answer = self.scraper.get_correct_community_answer(
                 question
@@ -31,21 +33,13 @@ class Quiz:
             questions.append(
                 Question(
                     question_number,
-                    body,
+                    introduction,
+                    text,
+                    img,
                     answers,
                     correct_community_answer,
                     correct_et_answer,
                 )
             )
 
-        return questions
-
-    def getExamTitle(self):
-        return self.scraper._getExamTitle()
-
-    def convert(self):
-        questions = self._extract_questions()
-        # random.shuffle(questions)
-        # for question in questions:
-        #     random.shuffle(question.answers)
         return questions

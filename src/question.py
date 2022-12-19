@@ -2,14 +2,17 @@ class Question:
     def __init__(
         self,
         question_number: str,
-        question,
+        introduction: str,
+        question: str,
+        question_img: str,
         answers: list,
         correct_community_answer: str,
         correct_et_answer: str,
     ):
         self.question_number = question_number
-        self.question = question[0]
-        self.question_img = str(question[1])
+        self.introduction = introduction
+        self.question = question
+        self.question_img = question_img
         self.answers = answers
         self.correct_community_answer = correct_community_answer
         self.correct_et_answer = correct_et_answer

@@ -1,11 +1,15 @@
 import re
+import string
 
 from bs4 import BeautifulSoup as bs
 
+import firebase
+
 
 class QuestionScraper:
-    def __init__(self, html_files=[]):
+    def __init__(self, quiz_dir, html_files=[]):
         self.parsed = self._parse_file(html_files)
+        self.quiz_dir = quiz_dir
 
     def _clean_string(self, string: str) -> str:
         string = re.sub(r"^[\n\s]+", "", string)
@@ -49,12 +53,32 @@ class QuestionScraper:
         return questions_raw
 
     def get_question_body(self, question):
+        introduction = ""
+        question_text = ""
+        img_src = ""
+
         question_body = question.find("p", attrs={"class": "card-text"})
-        img = question_body.find("img")
-        if img:
-            return [self._clean_string(question_body.text), img["src"]]
+
+        imgs = question_body.find_all("img")
+        if imgs:
+            img_src = firebase.uploadImg(
+                self.quiz_dir.split("/")[-1], self.quiz_dir + "/" + imgs[0]["src"][2:]
+            )
+            for img in imgs:
+                img.decompose()
+
+        spans = question_body.find_all("span", attrs={})
+        if spans:
+            introduction = self._clean_string(
+                str(question_body).split(str(spans[0]))[1].split(str(spans[1]))[0]
+            )
+            question_text = self._clean_string(
+                str(question_body).split(str(spans[1]))[1]
+            )
         else:
-            return [self._clean_string(question_body.text), None]
+            question_text = self._clean_string(str(question_body))
+
+        return [question_text, introduction, img_src]
 
     def get_question_number(self, question):
         return self._clean_string(
@@ -64,10 +88,29 @@ class QuestionScraper:
         ).split(" ")[1]
 
     def get_answers(self, question):
-        return [
-            self._clean_string(answer.text)
+        answers = []
+
+        # imgs = question.find_all("img", attrs={"class": "in-exam-image"})
+        # if imgs:
+        #     answers = [
+        #         {
+        #             "id": string.ascii_uppercase[index],
+        #             "text": "",
+        #             "img": firebase.uploadImg("./input/" + img["src"][2:]),
+        #         }
+        #         for index, img in enumerate(imgs)
+        #     ]
+        # else:
+        answers = [
+            {
+                "id": self._clean_string(answer.text)[0],
+                "text": self._clean_string(answer.text)[3:],
+                "img": "",
+            }
             for answer in question.find_all("li", attrs={"class": "multi-choice-item"})
         ]
+
+        return answers
 
     def get_correct_community_answer(self, question):
         correct_answer_raw = question.find(
