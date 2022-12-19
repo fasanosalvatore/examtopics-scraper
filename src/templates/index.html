@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Quiz</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-OERcA2EqjJCMA+/3y+gxIOqMEjwtxJY7qPCqsdltbNJuaOe923+mo//f6V8Qbsw3" crossorigin="anonymous"></script>
+    <script>
+      const questions = {{ questions }}
+      function isCorrectAnswer(questionIndex, givenAnswer) {
+        if(questions[questionIndex].correct_community_answer === givenAnswer) questions[questionIndex].isCommunityCorrect = true
+        if(questions[questionIndex].correct_et_answer === givenAnswer) questions[questionIndex].isETCorrect = true
+      }
+      function calculateScore() {
+        let scoreCommunity = 0
+        let scoreET = 0
+        questions.forEach(question => {
+          if(question.isCommunityCorrect) scoreCommunity++
+          if(question.isETCorrect) scoreET++
+        })
+        return [scoreCommunity, scoreET]
+      }
+      function reset() {
+        Array.from(document.getElementsByTagName("input")).forEach(checkbox => checkbox.checked = false)
+      }
+    </script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+
+  <body>
+
+    <div class="col-lg-8 mx-auto p-4 py-md-5">
+      <main x-data="{submitted: false}">
+        <div class="mx-0 mx-sm-auto">
+          <div class="card">
+            <div class="card-header bg-primary">
+              <h5 class="card-title text-white mt-2" id="exampleModalLabel">{{title}}</h5>
+            </div>
+            <div class="modal-body p-4">
+                <div x-data="{ questions: questions }">
+                  <template x-for="(question, index) in questions">
+                    <div class="py-2" x-data="{ givenAnswer: [] }">
+                      <p class="fw-bold" x-text="question.question_number+' '+question.question"></p>
+                      <template x-if="question.question_img != 'None'">
+                        <img  :src="question.question_img" >
+                      </template>
+
+                      <template x-for="answer in question.answers">
+
+                        <div class="form-check">
+                          <input :disabled="submitted" class="form-check-input" :value="answer[0]" type="checkbox" :id="answer[0]+question.question_number" x-model="givenAnswer" @change="isCorrectAnswer(index, givenAnswer.join(''))"/>
+                          <label class="form-check-label" :for="answer[0]+question.question_number" x-text="answer"/>
+                        </div>
+                      </template>
+                        <template x-if="submitted && givenAnswer.join('') === question.correct_community_answer">
+                          <div class="alert alert-success">
+                            Correct community answer
+                          </div>
+                        </template>
+                        <template x-if="submitted && givenAnswer.join('') !== question.correct_community_answer">
+                          <div class="alert alert-danger" x-text="'The correct community answer is '+question.correct_community_answer">
+                          </div>
+                        </template>
+                        <template x-if="submitted && givenAnswer.join('') === question.correct_et_answer">
+                          <div class="alert alert-success">
+                            Correct et answer
+                          </div>
+                        </template>
+                        <template x-if="submitted && givenAnswer.join('') !== question.correct_et_answer">
+                          <div class="alert alert-danger" x-text="'The correct et answer is '+question.correct_et_answer">
+                          </div>
+                        </template>
+                    </div>
+                  </template>
+                </div>
+            </div>
+            <div class="card-footer d-flex flex-row justify-content-between align-items-center">
+              <div>
+              <template x-if="submitted">
+
+                <p x-data="{score: calculateScore()}"><span x-text="'Community Score: '+score[0]+'/'+questions.length"></span> <span x-text="'ET Score: '+score[1]+'/'+questions.length"></span></p>
+              </template>
+            </div>
+            <div>
+                <button type="button" class="btn btn-primary" @click="submitted = false; reset()">Reset</button>
+                <button type="button" class="btn btn-primary" @click="submitted = true">Submit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>
